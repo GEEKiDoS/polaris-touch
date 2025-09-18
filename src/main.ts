@@ -223,11 +223,11 @@ window.touchMgr.onTouchEnd = (finger) => {
   for (let i = 0; i < 2; i++) {
     const faderTouch = faderTouches[i];
     if (!faderTouch) {
-      continue
+      continue;
     }
 
     if (faderTouch.id !== finger.id) {
-      return
+      continue;
     }
 
     faderTouches[i] = null;
