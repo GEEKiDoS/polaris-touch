@@ -12,6 +12,8 @@ export class TouchManager {
   touches: Map<number | string, Finger> = new Map();
 
   constructor() {
+    // stop safari to double tap zoom
+    document.addEventListener("touchend", (e) => e.preventDefault());
     document.addEventListener("pointerdown", (e) => {
       const finger = {
         id: e.pointerId,
@@ -54,6 +56,14 @@ export class TouchManager {
     });
 
     document.addEventListener("pointerup", (e) => {
+      this.touchEnd({
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+      });
+    });
+
+    document.addEventListener("pointercancel", (e) => {
       this.touchEnd({
         id: e.pointerId,
         x: e.clientX,
