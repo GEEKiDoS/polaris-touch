@@ -1,0 +1,82 @@
+body {
+  margin: 0;
+  touch-action: none;
+  background-color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.container {
+  height: 100vh;
+}
+
+.fader {
+  display: flex;
+  height: 50vh;
+}
+
+.fader>div {
+  width: 50%;
+  position: relative;
+  overflow: visible;
+}
+
+.fader>div>.position {
+  position: absolute;
+  height: 100%;
+  width: 2px;
+  background-color: rgb(255, 255, 0);
+  display: none;
+  z-index: 999;
+}
+
+.fader>div>.position.visible {
+  display: block;
+}
+
+.fader #left {
+  background: linear-gradient(to right, rgba(69, 233, 123, 0.8), rgba(69, 233, 123, 0.4));
+}
+
+.fader #right {
+  background: linear-gradient(to left, rgba(218, 69, 216, 0.8), rgba(218, 69, 216, 0.4));
+}
+
+.lane {
+  display: flex;
+  background-color: #000;
+  height: 50vh;
+}
+
+.lane>div {
+  width: calc(100vw / 12);
+  color: #fff;
+}
+
+.lane>div:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.lane>div.active {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.status {
+  background-color: #000;
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  font-size: 12px;
+  line-height: 24px;
+  display: flex;
+}
+
+.status>div {
+  padding-left: 1em;
+  padding-right: 1em;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
