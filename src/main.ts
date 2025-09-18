@@ -11,7 +11,7 @@ function getSpiceHost(reset = false, text: string | null = null) {
   if (spiceHost) {
     return spiceHost;
   }
-  
+
   const ipPort = prompt(text ?? "Enter SpiceAPI Endpoint (IP:PORT)\n\nREAD THIS:\nPlease disable password as I don't want to write the RC4 code.\n\nTouch the \"ws://.....\" on status bar for more than 2s then release for re-set SpiceAPI endpoint.\n\nThanks for your using, by GEEKi", "192.168.1.100:1337");
   if (!ipPort) {
     return getSpiceHost(true, "Please enter SpiceAPI Endpoint");
@@ -216,7 +216,7 @@ window.touchMgr.onTouchStart = (touches) => {
   }
 };
 
-window.touchMgr.onTouchChange = (touches) => {
+window.touchMgr.onTouchChange = (touches, noSend) => {
   const touchArr = Array.from(touches);
   let changed = removeTouches(touchArr);
 
@@ -247,7 +247,7 @@ window.touchMgr.onTouchChange = (touches) => {
 
   if (changed) {
     updateLaneState();
-    sendButtonState(laneState);
+    if (!noSend) sendButtonState(laneState);
   }
 
   frames++;

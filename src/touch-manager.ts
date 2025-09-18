@@ -1,4 +1,4 @@
-export type TouchEventCallback = (touches: ArrayLike<Touch>) => void;
+export type TouchEventCallback = (touches: ArrayLike<Touch>, noSend?: boolean) => void;
 export class TouchManager {
   onTouchEnd: TouchEventCallback | undefined = undefined;
   onTouchChange: TouchEventCallback | undefined = undefined;
@@ -11,6 +11,7 @@ export class TouchManager {
       if (this.onTouchChange) {
         this.onTouchChange(e.changedTouches);
       }
+      e.preventDefault();
     });
 
     document.addEventListener("touchstart", (e) => {
@@ -25,14 +26,17 @@ export class TouchManager {
       if (this.onTouchChange) {
         this.onTouchChange(e.changedTouches);
       }
+      e.preventDefault();
     });
 
     document.addEventListener("touchend", (e) => {
       this.touchEnd(e.changedTouches);
+      e.preventDefault();
     });
 
     document.addEventListener("touchcancel", (e) => {
       this.touchEnd(e.changedTouches);
+      e.preventDefault();
     });
 
     document.addEventListener("mousedown", (e) => {
@@ -81,7 +85,7 @@ export class TouchManager {
 
   touchEnd(changedTouches: TouchList | Touch[]) {
     if (this.onTouchChange) {
-      this.onTouchChange(changedTouches);
+      this.onTouchChange(changedTouches, true);
     }
 
     const instaRelease = [];
@@ -108,7 +112,7 @@ export class TouchManager {
       }, 16 - duration);
     }
 
-    if (this.onTouchEnd) {
+    if (this.onTouchEnd && instaRelease.length) {
       this.onTouchEnd(instaRelease);
     }
   }
