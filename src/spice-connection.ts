@@ -19,7 +19,7 @@ export class SpiceConnection {
 
         this._socket.onclose = () => {
             this.setStatus("CLOSED");
-            this.setServer("NONE");
+            this.setServer("<NONE>");
 
             this._socket = null;
         };
@@ -27,13 +27,13 @@ export class SpiceConnection {
 
     private setServer(server: string) {
         if (this._serverElement) {
-            this._serverElement.innerHTML = server;
+            this._serverElement.innerText = server;
         }
     }
 
     private setStatus(status: string) {
         if (this._statusElement) {
-            this._statusElement.innerHTML = status;
+            this._statusElement.innerText = status;
         }
     }
 

@@ -188,8 +188,7 @@ function removeTouches(touches: Touch[]): boolean {
 
 window.touchMgr.onTouchChange = (touches) => {
   const touchArr = Array.from(touches);
-  const changed = removeTouches(touchArr);
-  updateLaneState();
+  let changed = removeTouches(touchArr);
 
   for (const touch of touchArr) {
     const x = touch.clientX / document.body.clientWidth;
@@ -208,8 +207,9 @@ window.touchMgr.onTouchChange = (touches) => {
 
     // lane area touches
     if (y > 0.5) {
-      const column = Math.floor(x * 12);
+      const column = Math.max(0, Math.min(Math.floor(x * 12), 11));
       laneTouches[column].push(touch.identifier);
+      changed = true;
       continue;
     }
 
@@ -226,8 +226,9 @@ window.touchMgr.onTouchChange = (touches) => {
       faderTouches[1] = touch;
     }
   }
-
+  
   if (changed) {
+    updateLaneState();
     sendButtonState(laneState);
   }
 
