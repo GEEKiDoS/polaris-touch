@@ -6,15 +6,19 @@ import { listenHold } from "./listen-hold";
 
 const FADER_DEAD_ZONE = 10;
 
-function getSpiceHost(reset = false) {
+function getSpiceHost(reset = false, text: string | null = null) {
   let spiceHost = reset ? null : window.localStorage.getItem("api_backend");
   if (spiceHost) {
     return spiceHost;
   }
-
-  const ipPort = prompt("Enter SpiceAPI Endpoint (IP:PORT)\n\nREAD THIS:\nPlease disable password as I don't want to write the RC4 code.\n\nTouch the \"ws://.....\" on status bar for more than 2s then release for re-set SpiceAPI endpoint.\n\nThanks for your using, by GEEKi", "127.0.0.1:1337");
+  
+  const ipPort = prompt(text ?? "Enter SpiceAPI Endpoint (IP:PORT)\n\nREAD THIS:\nPlease disable password as I don't want to write the RC4 code.\n\nTouch the \"ws://.....\" on status bar for more than 2s then release for re-set SpiceAPI endpoint.\n\nThanks for your using, by GEEKi", "192.168.1.100:1337");
   if (!ipPort) {
-    return getSpiceHost(true);
+    return getSpiceHost(true, "Please enter SpiceAPI Endpoint");
+  }
+
+  if (!/\d+\.\d+\.\d+\.\d+\:\d+/.test(ipPort)) {
+    return getSpiceHost(true, "Please enter a correct SpiceAPI Endpoint\n(example: 192.168.1.100:1337):");
   }
 
   const [ip, port] = ipPort.split(':');
@@ -186,6 +190,32 @@ function removeTouches(touches: Touch[]): boolean {
   return changed
 }
 
+window.touchMgr.onTouchStart = (touches) => {
+  const touchArr = Array.from(touches);
+
+  for (const touch of touchArr) {
+    const x = touch.clientX / document.body.clientWidth;
+    const y = touch.clientY / document.body.clientHeight;
+
+    if (y > 0.5) {
+      continue;
+    }
+
+    // find new touch for binding to fader
+    if (faderTouches[1] && touch.clientX < faderTouches[1].clientX) {
+      faderTouches[0] = touch;
+    } else if (x < 0.5 && !faderTouches[0]) {
+      faderTouches[0] = touch;
+    }
+
+    if (faderTouches[0] && touch.clientX > faderTouches[0].clientX) {
+      faderTouches[1] = touch;
+    } else if (x > 0.5 && !faderTouches[1]) {
+      faderTouches[1] = touch;
+    }
+  }
+};
+
 window.touchMgr.onTouchChange = (touches) => {
   const touchArr = Array.from(touches);
   let changed = removeTouches(touchArr);
@@ -206,27 +236,15 @@ window.touchMgr.onTouchChange = (touches) => {
     }
 
     // lane area touches
-    if (y > 0.5) {
-      const column = Math.max(0, Math.min(Math.floor(x * 12), 11));
-      laneTouches[column].push(touch.identifier);
-      changed = true;
+    if (y < 0.5) {
       continue;
     }
 
-    // find new touch for binding to fader
-    if (faderTouches[1] && touch.clientX < faderTouches[1].clientX) {
-      faderTouches[0] = touch;
-    } else if (x < 0.5 && !faderTouches[0]) {
-      faderTouches[0] = touch;
-    }
-
-    if (faderTouches[0] && touch.clientX > faderTouches[0].clientX) {
-      faderTouches[1] = touch;
-    } else if (x > 0.5 && !faderTouches[1]) {
-      faderTouches[1] = touch;
-    }
+    const column = Math.max(0, Math.min(Math.floor(x * 12), 11));
+    laneTouches[column].push(touch.identifier);
+    changed = true;
   }
-  
+
   if (changed) {
     updateLaneState();
     sendButtonState(laneState);

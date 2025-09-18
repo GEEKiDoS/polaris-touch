@@ -2,47 +2,91 @@ export type TouchEventCallback = (touches: ArrayLike<Touch>) => void;
 export class TouchManager {
   onTouchEnd: TouchEventCallback | undefined = undefined;
   onTouchChange: TouchEventCallback | undefined = undefined;
+  onTouchStart: TouchEventCallback | undefined = undefined;
 
-  touchStartTimes: Map<number, number> = new Map();
+  touchStartTimes: Map<number | string, number> = new Map();
 
   constructor() {
-    document.body.addEventListener("touchmove", (e) => {
+    document.addEventListener("touchmove", (e) => {
       if (this.onTouchChange) {
         this.onTouchChange(e.changedTouches);
       }
-      e.preventDefault();
     });
 
-    document.body.addEventListener("touchstart", (e) => {
+    document.addEventListener("touchstart", (e) => {
       for (const touch of e.changedTouches) {
         this.touchStartTimes.set(touch.identifier, Date.now());
       }
 
+      if (this.onTouchStart) {
+        this.onTouchStart(e.changedTouches);
+      }
+
       if (this.onTouchChange) {
         this.onTouchChange(e.changedTouches);
       }
-      e.preventDefault();
     });
 
-    document.body.addEventListener("touchend", (e) => {
-      this.touchEnd(e);
-      e.preventDefault();
+    document.addEventListener("touchend", (e) => {
+      this.touchEnd(e.changedTouches);
     });
 
-    document.body.addEventListener("touchcancel", (e) => {
-      this.touchEnd(e);
-      e.preventDefault();
+    document.addEventListener("touchcancel", (e) => {
+      this.touchEnd(e.changedTouches);
+    });
+
+    document.addEventListener("mousedown", (e) => {
+      const fakeTouch = {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        identifier: 'MOUSE' as any,
+      } as Touch;
+
+      this.touchStartTimes.set(fakeTouch.identifier, Date.now());
+      if (this.onTouchStart) {
+        this.onTouchStart([fakeTouch]);
+      }
+
+      if (this.onTouchChange) {
+        this.onTouchChange([fakeTouch]);
+      }
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!this.touchStartTimes.has('MOUSE')) {
+        return;
+      }
+
+      const fakeTouch = {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        identifier: 'MOUSE' as any,
+      } as Touch;
+
+      if (this.onTouchChange) {
+        this.onTouchChange([fakeTouch]);
+      }
+    });
+
+    document.addEventListener("mouseup", (e) => {
+      const fakeTouch = {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        identifier: 'MOUSE' as any,
+      } as Touch;
+
+      this.touchEnd([fakeTouch]);
     });
   }
 
-  touchEnd(e: TouchEvent) {
+  touchEnd(changedTouches: TouchList | Touch[]) {
     if (this.onTouchChange) {
-      this.onTouchChange(e.touches);
+      this.onTouchChange(changedTouches);
     }
 
     const instaRelease = [];
 
-    for (const touch of e.changedTouches) {
+    for (const touch of changedTouches) {
       const startTime = this.touchStartTimes.get(touch.identifier);
       if (startTime == undefined) {
         throw new Error("?");

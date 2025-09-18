@@ -22,16 +22,16 @@ body {
 .fader>div {
   width: 50%;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .fader>div>.position {
   position: absolute;
   height: 100%;
   width: 2px;
-  background-color: rgb(255, 255, 0);
   display: none;
   z-index: 999;
+  transform: translateX(-1px);
 }
 
 .fader>div>.position.visible {
@@ -42,8 +42,16 @@ body {
   background: linear-gradient(to right, rgba(69, 233, 123, 0.8), rgba(69, 233, 123, 0.4));
 }
 
+.fader #left .position {
+  background-color: rgba(0, 255, 0);
+}
+
 .fader #right {
   background: linear-gradient(to left, rgba(218, 69, 216, 0.8), rgba(218, 69, 216, 0.4));
+}
+
+.fader #right .position {
+  background-color: rgba(255, 0, 255);
 }
 
 .lane {
