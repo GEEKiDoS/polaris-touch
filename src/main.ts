@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { TouchManager } from "./touch-manager";
+import { TouchManager, type Finger } from "./touch-manager";
 import { SpiceConnection } from "./spice-connection";
 import { listenHold } from "./listen-hold";
 
@@ -108,7 +108,7 @@ const lanes = Array.from(document.querySelectorAll<HTMLDivElement>(".lane>div"))
 const faderPositions = Array.from(document.querySelectorAll<HTMLDivElement>(".fader .position"));
 
 const laneState = new Array(12).fill(false);
-const faderTouches: Array<Touch | null> = [null, null];
+const faderTouches: Array<Finger | null> = [null, null];
 const lastFaderPositions: Array<number | null> = [null, null];
 const faderDirs = [0, 0];
 const faderAnalogs = [0.51, 0.51];
@@ -165,102 +165,60 @@ function updateFaderAnalog() {
   }
 }
 
-let laneTouches: number[][] = new Array(12).fill([]);
-function updateLaneState() {
-  for (let i = 0; i < 12; i++) {
-    laneState[i] = !!laneTouches[i].length;
-  }
-}
+window.touchMgr.onTouchStart = (finger) => {
+  const x = finger.x / document.body.clientWidth;
+  const y = finger.y / document.body.clientHeight;
 
-function removeTouches(touches: Touch[]): boolean {
-  // remove ended touches
-  let changed = false;
-
-  // remove changed touches
-  for (let i = 0; i < 12; i++) {
-    const oldLen = laneTouches[i].length;
-    laneTouches[i] =
-      laneTouches[i].filter(v => touches.findIndex(t => t.identifier == v) == -1);
-
-    if (oldLen != laneTouches[i].length) {
-      changed = true;
-    }
+  if (y > 0.35) {
+    return;
   }
 
-  return changed
-}
+  // find new touch for binding to fader
+  if (faderTouches[1] && finger.x < faderTouches[1].x) {
+    faderTouches[0] = finger;
+  } else if (x < 0.5 && !faderTouches[0]) {
+    faderTouches[0] = finger;
+  }
 
-window.touchMgr.onTouchStart = (touches) => {
-  const touchArr = Array.from(touches);
-
-  for (const touch of touchArr) {
-    const x = touch.clientX / document.body.clientWidth;
-    const y = touch.clientY / document.body.clientHeight;
-
-    if (y > 0.5) {
-      continue;
-    }
-
-    // find new touch for binding to fader
-    if (faderTouches[1] && touch.clientX < faderTouches[1].clientX) {
-      faderTouches[0] = touch;
-    } else if (x < 0.5 && !faderTouches[0]) {
-      faderTouches[0] = touch;
-    }
-
-    if (faderTouches[0] && touch.clientX > faderTouches[0].clientX) {
-      faderTouches[1] = touch;
-    } else if (x > 0.5 && !faderTouches[1]) {
-      faderTouches[1] = touch;
-    }
+  if (faderTouches[0] && finger.x > faderTouches[0].x) {
+    faderTouches[1] = finger;
+  } else if (x > 0.5 && !faderTouches[1]) {
+    faderTouches[1] = finger;
   }
 };
 
-window.touchMgr.onTouchChange = (touches, noSend) => {
-  const touchArr = Array.from(touches);
-  let changed = removeTouches(touchArr);
+window.touchMgr.onTouchChange = (fingers) => {
+  laneState.fill(false);
 
-  for (const touch of touchArr) {
-    const x = touch.clientX / document.body.clientWidth;
-    const y = touch.clientY / document.body.clientHeight;
+  for (const finger of fingers) {
+    const x = finger.x / document.body.clientWidth;
+    const y = finger.y / document.body.clientHeight;
 
     // update touch bounded to fader
-    if (touch.identifier == faderTouches[0]?.identifier) {
-      faderTouches[0] = touch;
+    if (finger.id == faderTouches[0]?.id) {
+      faderTouches[0] = finger;
       continue;
     }
 
-    if (touch.identifier == faderTouches[1]?.identifier) {
-      faderTouches[1] = touch;
+    if (finger.id == faderTouches[1]?.id) {
+      faderTouches[1] = finger;
       continue;
     }
 
     // lane area touches
-    if (y < 0.5) {
+    if (y < 0.35) {
       continue;
     }
 
     const column = Math.max(0, Math.min(Math.floor(x * 12), 11));
-    laneTouches[column].push(touch.identifier);
-    changed = true;
+    laneState[column] = true;
   }
 
-  if (changed) {
-    updateLaneState();
-    if (!noSend) sendButtonState(laneState);
-  }
-
+  sendButtonState(laneState);
   frames++;
 };
 
-window.touchMgr.onTouchEnd = (touches) => {
-  const touchArr = Array.from(touches);
-  const changed = removeTouches(touchArr);
-  if (changed) {
-    updateLaneState();
-    sendButtonState(laneState);
-  }
-
+window.touchMgr.onTouchEnd = (finger) => {
   // remove fader touches
   for (let i = 0; i < 2; i++) {
     const faderTouch = faderTouches[i];
@@ -268,19 +226,15 @@ window.touchMgr.onTouchEnd = (touches) => {
       continue
     }
 
-    for (const touch of touchArr) {
-      if (faderTouch.identifier !== touch.identifier) {
-        continue
-      }
-
-      faderTouches[i] = null;
-      lastFaderPositions[i] = null;
-      faderDirs[i] = 0;
-      break;
+    if (faderTouch.id !== finger.id) {
+      return
     }
-  }
 
-  frames++;
+    faderTouches[i] = null;
+    lastFaderPositions[i] = null;
+    faderDirs[i] = 0;
+    break;
+  }
 };
 
 const update = () => {
@@ -303,7 +257,7 @@ const update = () => {
       continue;
     }
 
-    const x = faderTouch.clientX - (i * areaWidth);
+    const x = faderTouch.x - (i * areaWidth);
     const lastX = lastFaderPositions[i];
     if (lastX !== null) {
       const delta = x - lastX;

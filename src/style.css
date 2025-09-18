@@ -16,7 +16,7 @@ body {
 
 .fader {
   display: flex;
-  height: 50vh;
+  height: 35vh;
 }
 
 .fader>div {
@@ -57,7 +57,7 @@ body {
 .lane {
   display: flex;
   background-color: #000;
-  height: 50vh;
+  height: 65vh;
 }
 
 .lane>div {
