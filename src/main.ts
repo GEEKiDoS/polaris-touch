@@ -30,7 +30,7 @@ function getSpiceHost(reset = false, text: string | null = null) {
 
 if (window.location.protocol.toLowerCase() == "https:") {
   alert("Please use HTTP instead, You can't connect to insecure websocket in https environment.");
-  throw new Error("NO_HTTPS");
+  window.location.protocol = "http:"
 }
 
 let lastLaneState = new Array(12).fill(false);
@@ -214,7 +214,6 @@ window.touchMgr.onTouchChange = (fingers) => {
     laneState[column] = true;
   }
 
-  sendButtonState(laneState);
   frames++;
 };
 
@@ -289,3 +288,15 @@ const update = () => {
 }
 
 requestAnimationFrame(update);
+
+setInterval(() => {
+  sendButtonState(laneState);
+}, 8);
+
+const errorDisplay = document.querySelector<HTMLDivElement>("#errors")!;
+if (errorDisplay) {
+  window.onerror = (...args) => {
+    errorDisplay.innerText += JSON.stringify(args) + "\n";
+    errorDisplay.scrollTop = errorDisplay.scrollHeight;
+  }
+}
